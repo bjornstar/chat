@@ -1,0 +1,43 @@
+{
+  "name": "@bjornstar/chat",
+  "version": "1.0.0",
+  "description": "A web based chat app, using react, in 3d, with physics",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx --no-install vite build",
+    "start": "npx --no-install node-dev .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bjornstar/chat.git"
+  },
+  "author": "Bjorn Stromberg <bjorn@bjornstar.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bjornstar/chat/issues"
+  },
+  "homepage": "https://github.com/bjornstar/chat#readme",
+  "dependencies": {
+    "@bjornstar/tomes": "^1.1.2",
+    "@react-three/cannon": "^6.6.0",
+    "@react-three/drei": "^9.121.4",
+    "@react-three/fiber": "^8.17.14",
+    "@types/events": "^3.0.3",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/three": "^0.173.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "events": "^3.3.0",
+    "express": "^4.21.2",
+    "node-dev": "^8.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.173.0",
+    "three-stdlib": "^2.35.13",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.3",
+    "ws": "^8.18.0"
+  },
+  "type": "module"
+}

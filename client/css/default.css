@@ -1,0 +1,120 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+html,body {
+  font-family: sans-serif;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #9a9a9a;
+  color: #fff;
+}
+#app {
+  height: 100%;
+  width: 100%;
+}
+a {
+  text-decoration: none;
+  color: rgba(0,0,0,1);
+}
+#loginError {
+  color: #c33;
+}
+#Welcome {
+  display: block;
+  position: absolute;
+  margin: 10px;
+  padding: 10px;
+  border: solid 1px #fff;
+  border-radius: 2px;
+  box-shadow: 2px 2px 2px #E55;
+  top: 40px;
+  left: 40px;
+  z-index: 20;
+}
+#Welcome h1 {
+  padding-bottom: 10px;
+}
+#Welcome button {
+  border-radius: 2px;
+  padding: 4px;
+  background-color: black;
+  color: white;
+  border-style: solid;
+  border: 1px white solid;
+}
+#Welcome input {
+  border: solid 1px white;
+  padding: 4px;
+  background: black;
+  color: white;
+}
+#blocker {
+  background-color: #000;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.5;
+  z-index: 10;
+}
+#blocker div {
+  position: absolute;
+}
+.view {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: #d4f1b3;
+  z-index: 1;
+  display: block;
+  user-select: none;
+}
+
+.animated.container {
+  transition: transform 1s linear, opacity 1s;
+}
+
+div.view {
+  width:100%;
+}
+
+div.container {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+div.nametag {
+  position: absolute;
+  top: -55px;
+  font-weight: bold;
+  font-size: 8pt;
+  transform: translateX(-50%);
+  min-width: 300px;
+  text-align: center;
+}
+
+ul {
+  list-style-type: none;
+}
+
+li {
+  float: left;
+  margin: 4px;
+  width: 100px;
+  height: 100px;
+}
+
+li img {
+  padding-left: 8px;
+  padding-bottom: 6px;
+}
+
+.debugInfo {
+  position: absolute;
+}
