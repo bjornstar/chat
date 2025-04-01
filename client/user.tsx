@@ -1,14 +1,13 @@
 import { useSphere } from "@react-three/cannon";
 import { useFrame } from "@react-three/fiber";
 import { createRef, memo, useEffect, useRef } from "react";
-import { Matrix4, MeshBasicMaterial } from "three";
-import { TextGeometry } from "three-stdlib";
+import { ExtrudeGeometry, Matrix4, MeshNormalMaterial } from "three";
 
 import type { Triplet } from "@react-three/cannon";
-import type { MutableRefObject } from "react";
+import type { RefObject, JSX } from "react";
 import type { ColorRepresentation, InstancedMesh } from "three";
 
-import { chars, font, getWidth, isChar } from './font';
+import { chars, getCenter, isChar, shapes } from './font';
 import { useTome } from './tomes';
 
 import type { Char } from './font';
@@ -52,9 +51,9 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
   const word = useRef(0);
   const letters = useRef<Char[]>(new Array(number).fill("0").map((_, i) => filteredName[i % name.length]));
 
-  const refMap: Record<Char, MutableRefObject<InstancedMesh> | null> = {} as Record<
+  const refMap: Record<Char, RefObject<InstancedMesh | null>> = {} as Record<
     Char,
-    MutableRefObject<InstancedMesh> | null
+    RefObject<InstancedMesh | null>
   >;
 
   for (const char of chars) {
@@ -102,11 +101,14 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
     };
 
     Object.values(refMap).forEach((letterRef) => {
-      console.log(letterRef?.current)
-      if (!letterRef) return;
-      letterRef.current.setMatrixAt(index.current, home);
-      letterRef.current.instanceMatrix.needsUpdate = true;
+      if (!letterRef.current) return;
+      for (let i = 0; i < letterRef.current.count; i += 1) {
+        letterRef.current.setMatrixAt(i, home);
+        letterRef.current.instanceMatrix.needsUpdate = true;
+      }
     });
+
+    tChat.addListener('readable', updateChat);
 
     return () => tChat.removeListener('readable', updateChat);
   }, [tChat]);
@@ -130,16 +132,16 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
       {chars.map((char) => (
         <instancedMesh
           args={[
-            new TextGeometry(char, { font, height: 0.1, size: 0.75 }),
-            new MeshBasicMaterial(),
+            new ExtrudeGeometry(shapes[char], { bevelSize: 0, depth: 0.1 }),
+            new MeshNormalMaterial(),
             number,
           ]}
           key={`${char}-${userId}`}
           name={`${char}-${userId}`}
           position={[
-            -0.4 - (getWidth(char) - 711) / 2000,
+            0 - getCenter(char),
             -0.25,
-            0.25,
+            0,
           ]}
           ref={refMap[char]}
         />
@@ -147,7 +149,6 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
       <instancedMesh
         args={[undefined, undefined, number]}
         castShadow
-        receiveShadow
         ref={ref}
       >
         <sphereGeometry args={[size, 48]} />

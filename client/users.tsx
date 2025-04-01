@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import { Input } from './input';
+import { useInput } from './use-input';
 import { useSockMonger } from './sockmonger';
-import { useTome } from './tomes';
+import { useTome } from './tomes/index.js';
 import { User } from './user';
 
 function union(a: string[] = [], b: string[] = []): string[] {
@@ -42,16 +42,17 @@ export const Users = ({ number = 100, size = 1 }) => {
     };
   }, [tChats, tUsers]);
 
+  useInput(userId);
+
   return (
     <>
-      {userId ? <Input userId={userId} /> : null}
-      {userIds.map((userId, index) => {
+      {userIds.map((userId, offset) => {
         if (!tUsers[userId]) return null;
 
         const { color, name } = tUsers[userId].unTome();
 
         return (
-          <User key={userId} {...{ color, name, number, offset: index, size, userId }} />
+          <User key={userId} {...{ color, name, number, offset, size, userId }} />
         );
       })}
     </>

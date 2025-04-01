@@ -29,7 +29,7 @@ const RECONNECT_DELAY = 1000;
 
 export class SockMonger extends EventEmitter {
 	reconnect: boolean;
-	timeout: NodeJS.Timeout;
+	timeout?: number;
 	url: string;
 	ws?: WebSocket;
 

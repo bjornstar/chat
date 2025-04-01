@@ -4,15 +4,14 @@ import { isChar } from './font';
 import { useSockMonger } from './sockmonger';
 import { useTome } from './tomes';
 
-export function Input({ userId }: { userId: string }) {
+export function useInput(userId: string) {
   const sm = useSockMonger();
-
   const tChats = useTome('chats');
 
   useEffect(() => {
-    const tMyChat = tChats[userId];
+    if (!userId || !tChats[userId]) return;
 
-    if (!tMyChat) return;
+    const tMyChat = tChats[userId];
 
     const lineBreak = () => {
       if (tMyChat.length) tMyChat.assign([]);
@@ -39,7 +38,6 @@ export function Input({ userId }: { userId: string }) {
     };
 
     tMyChat.on('readable', remoteEmit);
-
     window.addEventListener('keydown', onkeydown);
 
     return () => {
@@ -47,6 +45,4 @@ export function Input({ userId }: { userId: string }) {
       tMyChat.removeListener('readable', remoteEmit);
     };
   }, [tChats, userId]);
-
-  return null;
 }
