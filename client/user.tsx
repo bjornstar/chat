@@ -1,14 +1,14 @@
 import { useSphere } from "@react-three/cannon";
 import { useFrame } from "@react-three/fiber";
-import { createRef, memo, useEffect, useRef } from "react";
-import { ExtrudeGeometry, Matrix4, MeshNormalMaterial } from "three";
+import { createRef, memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { DynamicDrawUsage, ExtrudeGeometry, Matrix4, MeshNormalMaterial } from "three";
 
 import type { Triplet } from "@react-three/cannon";
 import type { RefObject, JSX } from "react";
 import type { ColorRepresentation, InstancedMesh } from "three";
 
 import { chars, getCenter, isChar, shapes } from './font';
-import { useTome } from './tomes';
+import { useLibrary } from './tomes/provider';
 
 import type { Char } from './font';
 
@@ -24,10 +24,10 @@ interface UserProps {
 
 const m = new Matrix4();
 const pm = new Matrix4();
-const home = new Matrix4().setPosition(-999, -999, -999);
+const letterScratch = new Array(chars.length).fill(0);
 
 function UserComponent({ color, name, number, offset, position = [0, 0, 0], size, userId }: UserProps): JSX.Element {
-  const tChat = useTome('chats')[userId];
+  const library = useLibrary();
 
   const [ref, { at }] = useSphere((i) => {
     const j = i % 4;
@@ -49,25 +49,22 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
 
   const index = useRef(0);
   const word = useRef(0);
-  const letters = useRef<Char[]>(new Array(number).fill("0").map((_, i) => filteredName[i % name.length]));
+  const [letters, setLetters] = useState(new Array(number).fill("0").map((_, i) => filteredName[i % name.length]))
+  const letterCount = useRef<number[]>(letters.reduce((agg, char) => {
+    agg[chars.indexOf(char)] += 1;
+    return agg;
+  }, new Array(chars.length).fill(0)));
 
-  const refMap: Record<Char, RefObject<InstancedMesh | null>> = {} as Record<
+  const refMap = chars.reduce((agg, char) => ({ ...agg, [char]: createRef<InstancedMesh>() }), {} as Record<
     Char,
     RefObject<InstancedMesh | null>
-  >;
-
-  for (const char of chars) {
-    refMap[char] = createRef<InstancedMesh>();
-  }
+  >);
 
   useEffect(() => {
-    const updateChat = () => {
-      const prevLetterRef = refMap[letters.current[index.current]];
+    if (!library.chats.tome[userId]) return console.warn('we got no chats');
 
-      if (prevLetterRef?.current) {
-        prevLetterRef.current.setMatrixAt(index.current, home);
-        prevLetterRef.current.instanceMatrix.needsUpdate = true;
-      }
+    const updateChat = () => {
+      const tChat = library.chats.tome[userId];
 
       if (!tChat.length) {
         for (let i = 0; i < Math.min(word.current, number); i += 1) {
@@ -83,6 +80,25 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
 
       if (!isChar(char)) return;
 
+      const prevChar = letters[index.current];
+      const prevLetterRef = refMap[prevChar];
+
+      const prevCharIndex = chars.indexOf(prevChar);
+      const charIndex = chars.indexOf(char);
+
+      if (prevLetterRef.current && prevChar !== char) {
+        const prevCharCount = Math.max(letterCount.current[prevCharIndex] - 1, 0);
+        const charCount = Math.min(letterCount.current[charIndex] + 1, number);
+
+        letterCount.current[prevCharIndex] = prevCharCount;
+        letterCount.current[charIndex] = charCount;
+
+        prevLetterRef.current.count = prevCharCount;
+        refMap[char].current!.count = charCount;
+
+        console.log('after', prevChar, prevLetterRef.current.count, char, charCount, letterCount.current[charIndex]);
+      }
+
       at(index.current).position.set(
         position[0] - 10 + word.current * size * 2.1 + Math.random() * size * 0.5,
         position[1] + 10,
@@ -93,37 +109,40 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
       at(index.current).mass.set(0);
       at(index.current).sleep();
 
-      letters.current[index.current] = char;
+      setLetters(v => {
+        v[index.current] = char;
+        return v;
+      });
 
       index.current = (index.current + 1) % number;
 
       word.current += 1;
     };
 
-    Object.values(refMap).forEach((letterRef) => {
-      if (!letterRef.current) return;
-      for (let i = 0; i < letterRef.current.count; i += 1) {
-        letterRef.current.setMatrixAt(i, home);
-        letterRef.current.instanceMatrix.needsUpdate = true;
-      }
-    });
+    library.chats.tome[userId].addListener('readable', updateChat);
 
-    tChat.addListener('readable', updateChat);
-
-    return () => tChat.removeListener('readable', updateChat);
-  }, [tChat]);
+    return () => {
+      library.chats.tome[userId].removeListener('readable', updateChat);
+    };
+  }, [library]);
 
   useFrame(() => {
-    for (let i = 0; i < number; i += 1) {
-      const letter = letters.current[i];
+    letterScratch.fill(0);
 
-      if (!refMap[letter]?.current || !ref.current) return;
+    for (let i = 0; i < number; i += 1) {
+      const char = letters[i];
+
+      if (!refMap[char]?.current || !ref.current) return;
 
       ref.current.getMatrixAt(i, m);
       pm.copyPosition(m);
 
-      refMap[letter].current.setMatrixAt(i, pm);
-      refMap[letter].current.instanceMatrix.needsUpdate = true;
+      const countIndex = chars.indexOf(char);
+
+      refMap[char].current.setMatrixAt(letterScratch[countIndex], pm);
+      refMap[char].current.instanceMatrix.needsUpdate = true;
+
+      letterScratch[countIndex] += 1;
     }
   });
 
@@ -131,11 +150,8 @@ function UserComponent({ color, name, number, offset, position = [0, 0, 0], size
     <group>
       {chars.map((char) => (
         <instancedMesh
-          args={[
-            new ExtrudeGeometry(shapes[char], { bevelSize: 0, depth: 0.1 }),
-            new MeshNormalMaterial(),
-            number,
-          ]}
+          args={[new ExtrudeGeometry(shapes[char], { bevelSize: 0, depth: 0.1 }), new MeshNormalMaterial(), number]}
+          count={letterCount.current[chars.indexOf(char)]}
           key={`${char}-${userId}`}
           name={`${char}-${userId}`}
           position={[

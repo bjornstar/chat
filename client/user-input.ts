@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
+import { type FC, useEffect } from 'react';
 
 import { isChar } from './font';
 import { useSockMonger } from './sockmonger';
-import { useTome } from './tomes';
+import { useLibrary } from './tomes/provider';
 
-export function useInput(userId: string) {
+export const UserInput: FC<{ userId: string }> = ({ userId }) => {
+  const library = useLibrary();
   const sm = useSockMonger();
-  const tChats = useTome('chats');
 
   useEffect(() => {
-    if (!userId || !tChats[userId]) return;
+    if (!userId) return console.info('I have no userId');
 
-    const tMyChat = tChats[userId];
+    const tMyChat = library.chats.tome[userId];
+
+    if (!tMyChat) return console.warn('my chat is missing')
 
     const lineBreak = () => {
       if (tMyChat.length) tMyChat.assign([]);
@@ -44,5 +46,7 @@ export function useInput(userId: string) {
       window.removeEventListener('keydown', onkeydown);
       tMyChat.removeListener('readable', remoteEmit);
     };
-  }, [tChats, userId]);
-}
+  }, [library, sm, userId]);
+
+  return null;
+};

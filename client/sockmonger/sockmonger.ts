@@ -42,6 +42,7 @@ export class SockMonger extends EventEmitter {
 	}
 
 	connect() {
+		console.log('connect')
 		this.reconnect = true;
 		const ws = new WebSocket(this.url);
 

@@ -1,55 +1,63 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 
-import { useInput } from './use-input';
+import { UserInput } from './user-input';
 import { useSockMonger } from './sockmonger';
-import { useTome } from './tomes/index.js';
+import { useLibrary } from './tomes/provider';
 import { User } from './user';
 
-function union(a: string[] = [], b: string[] = []): string[] {
-  return a.filter((v) => b.includes(v));
-}
-
-export const Users = ({ number = 100, size = 1 }) => {
+const UsersComponent = ({ number = 100, size = 1 }) => {
   const sm = useSockMonger();
+  const library = useLibrary();
 
-  const [userId, setUserId] = useState<string>('');
-  const [userIds, updateUserIds] = useState<string[]>([]);
-
-  const handleOpen = () => sm.remoteEmit('register', 'bjornstar');
+  const [myUserId, setMyUserId] = useState<string>('');
+  const [userIds, updateUserIds] = useState<string[]>(Object.keys(library.users.tome));
 
   useEffect(() => {
+    const handleLoggedIn = (userId: string) => {
+      localStorage.setItem('userId', userId);
+      setMyUserId(userId);
+    }
+
+    const handleOpen = () => {
+      const localUserId = localStorage.getItem('userId');
+
+      if (localUserId) {
+        sm.remoteEmit('login', localUserId)
+      } else {
+        sm.remoteEmit('register', 'bjornstar');
+      }
+    }
+
+    sm.on('loggedIn', handleLoggedIn);
     sm.on('open', handleOpen);
-    sm.on('loggedIn', setUserId);
 
     return () => {
+      sm.removeListener('loggedIn', handleLoggedIn);
       sm.removeListener('open', handleOpen);
-      setUserId('');
+
+      setMyUserId('');
     };
   }, [sm]);
 
-  const tChats = useTome('chats');
-  const tUsers = useTome('users');
-
   useEffect(() => {
-    const updateState = () => updateUserIds(union(Object.keys(tChats), Object.keys(tUsers)));
+    const syncUserIds = () => updateUserIds(Object.keys(library.users.tome));
 
-    tChats.on('readable', updateState);
-    tUsers.on('readable', updateState);
+    library.users.tome.on('add', syncUserIds);
+    library.users.tome.on('del', syncUserIds);
 
     return () => {
-      tChats.removeListener('readable', updateState);
-      tUsers.removeListener('readable', updateState);
+      library.users.tome.removeListener('add', syncUserIds);
+      library.users.tome.removeListener('del', syncUserIds);
     };
-  }, [tChats, tUsers]);
-
-  useInput(userId);
+  }, [library.users.tome]);
 
   return (
     <>
+      <UserInput userId={myUserId} />
       {userIds.map((userId, offset) => {
-        if (!tUsers[userId]) return null;
+        if (!library.users.tome[userId]) return null;
 
-        const { color, name } = tUsers[userId].unTome();
+        const { color, name } = library.users.tome[userId].unTome();
 
         return (
           <User key={userId} {...{ color, name, number, offset, size, userId }} />
@@ -58,3 +66,5 @@ export const Users = ({ number = 100, size = 1 }) => {
     </>
   );
 }
+
+export const Users = memo(UsersComponent);

@@ -20,7 +20,7 @@ export class SleevedTome {
     let connected = false;
 
     this.connect = (sm: SockMonger) => {
-      if (connected) return console.log('already connected');
+      if (connected) return console.warn('already connected', title);
 
       sm.on(title, handleInit);
       sm.on(`${title}.diff`, handleDiff);
@@ -30,6 +30,7 @@ export class SleevedTome {
     }
 
     this.disconnect = (sm: SockMonger) => {
+      if (!connected) return console.warn('already disconnected', title);
       sm.removeListener(title, handleInit);
       sm.removeListener(`${title}.diff`, handleDiff);
       tome.removeListener('readable', handleReadable);

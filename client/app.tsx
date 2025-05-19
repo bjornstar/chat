@@ -16,7 +16,7 @@ function Ground(props: PlaneProps): JSX.Element {
 
   return (
     <mesh ref={ref}>
-      <planeGeometry args={[1000, 1000]} />
+      <planeGeometry args={[100000, 100000]} />
       <meshLambertMaterial color="#ccc" />
     </mesh>
   );

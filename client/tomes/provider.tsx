@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-
 import type { FC, ReactNode } from 'react'
-import { type SleevedTome } from './sleeve';
 
-export const LibraryContext = createContext<{ [title: string]: SleevedTome }>({});
+import { SleevedTome } from './sleeve';
+import { useSockMonger } from '../sockmonger';
+
+export const LibraryContext = createContext<Record<'chats' | 'users', SleevedTome >>({ chats: new SleevedTome('chats'), users: new SleevedTome('users') });
 
 export const useLibrary = () => {
   const c = useContext(LibraryContext);
@@ -16,7 +17,15 @@ interface LibraryProviderProps {
 }
 
 export const LibraryProvider: FC<LibraryProviderProps> = ({ children }) => {
-  const [library] = useState<{ [title: string]: SleevedTome }>({});
+  const sm = useSockMonger();
+  const [library] = useState<Record<'chats' | 'users', SleevedTome >>({ chats: new SleevedTome('chats'), users: new SleevedTome('users') });
+
+  useEffect(() => {
+    Object.values(library).forEach(sleevedTome => sleevedTome.connect(sm));
+    return () => {
+      Object.values(library).forEach(sleevedTome => sleevedTome.disconnect(sm));
+    };
+  });
 
   return (
     <LibraryContext.Provider value={library}>

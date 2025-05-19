@@ -3,13 +3,12 @@ import { useSockMonger } from '../sockmonger';
 import { useLibrary } from './provider';
 import { SleevedTome } from './sleeve';
 
-export function useTome(title: string) {
+export function useTome(title: 'chats' | 'users') {
   const library = useLibrary();
   const sm = useSockMonger();
 
-  library[title] ??= new SleevedTome(title);
-
   useEffect(() => {
+    library[title] = new SleevedTome(title);
     library[title].connect(sm);
 
     return () => {
